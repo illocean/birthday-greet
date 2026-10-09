@@ -1,0 +1,21 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+.vite
+*.log
+*.tsbuildinfo
+.openchamber
+
+# Third-party reference screenshots (watermarked, by the brief NOT to be reused or
+# traced). They are input material, not our assets — keeping them out of the repo
+# makes it impossible to ship one by accident.
+References
+
+# Regenerated on every `npm run verify` run, which rm -rf's the directory first.
+screenshots
+
+# Design-tool state from another agent, parked at a gate this machine cannot
+# satisfy. Not part of the site.
+.impeccable

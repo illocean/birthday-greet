@@ -1,0 +1,1426 @@
+@import "tailwindcss";
+
+/*
+ * The whole theme. Tailwind v4 has no tailwind.config.js, and this block is
+ * the replacement: the `--color-` prefix is what turns a token into a utility
+ * (`bg-cream`, `text-ink`, `border-blush-200`). Do not add a config file back.
+ *
+ * The palette is fixed by the brief. --gold is the confetti accent in scene two
+ * and is deliberately the only warm note here.
+ */
+@theme {
+  --color-cream: #FFFAF7;
+  --color-blush-50: #FFF6F8;
+  --color-blush-100: #FDE8EE;
+  --color-blush-200: #F9D3DE;
+  --color-rose-300: #F4B3C6;
+  --color-rose-400: #EC93AE;
+  --color-rose-600: #B8607D;
+  --color-ink: #5A3A46;
+  --color-letter-ink: #3B2F2A;
+  --color-gold: #E8C39E;
+
+  /* The letter is handwritten, so it gets its own face. Great Vibes for the
+     scene headings, Quicksand for anything that is a label or a hint. */
+  --font-letter: "The Girl Next Door", "Segoe Print", cursive;
+  --font-script: "Great Vibes", "Snell Roundhand", cursive;
+  --font-ui: "Quicksand", ui-rounded, system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    /* 100dvh, never 100vh: on a phone the two differ by the collapsing URL bar,
+       and everything in this build is measured in viewport heights. */
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior-y: none;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background-color: #edb4cc;
+    color: var(--color-ink);
+    font-family: var(--font-ui);
+    font-synthesis: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* One visible focus ring for the whole site. The envelope is a real button
+     and has to be reachable by keyboard, so this is load-bearing, not polish.
+     No `border-radius` here on purpose: outlines already follow the element's
+     radius, and setting one in this low-specificity rule loses to the component
+     rules that set it properly. */
+  :focus-visible {
+    outline: 2px solid var(--color-rose-600);
+    outline-offset: 3px;
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+  }
+}
+
+@layer components {
+  /*
+   * Linen. The weave is a real photograph — Fabric061 from ambientCG, CC0, fetched and
+   * colour-mapped by `npm run textures` — rather than an authored approximation, because
+   * a procedural crosshatch reads as a grid and a photographed one reads as cloth.
+   *
+   * The texture arrives already tinted to blush-100, so there is deliberately no
+   * `background-blend-mode` here. A neutral weave has to be blended onto a very light
+   * base, and every blend that can do that either shifts the hue toward grey or does
+   * almost nothing; putting the colour in the pixels avoids the problem entirely and
+   * lets the browser composite two plain images. `background-color` is the fallback if
+   * the image ever fails to load, so a lost texture degrades to plain blush card.
+   *
+   * The grain layer sits on top at low opacity: weave carries the material, grain only
+   * softens it, and the two are separable if one ever needs turning off.
+   */
+  .linen {
+    background-color: var(--color-blush-100);
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23f)' opacity='.09'/%3E%3C/svg%3E"),
+      url("./assets/textures/envelope-linen.webp");
+    background-size:
+      140px 140px,
+      320px 320px;
+  }
+
+  /* The vignette that stops the envelope reading as a coloured rectangle. */
+  .vignette::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(
+      125% 105% at 50% 32%,
+      rgb(255 255 255 / 0.5) 0%,
+      rgb(255 255 255 / 0) 42%,
+      rgb(90 58 70 / 0.16) 100%
+    );
+  }
+
+  /* Faint breathing prompt. Reduced motion below flattens it to a steady line. */
+  .hint {
+    animation: hint-pulse 3.2s ease-in-out infinite;
+  }
+
+  @keyframes hint-pulse {
+    0%,
+    100% {
+      opacity: 0.3;
+      transform: translateY(0);
+    }
+    50% {
+      opacity: 0.78;
+      transform: translateY(-3px);
+    }
+  }
+
+  /* ── Scene one: the envelope ──────────────────────────────────────────── */
+
+  .envelope-stage {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 2rem;
+    min-height: 100dvh;
+    padding: 2rem 1.25rem calc(2.5rem + env(safe-area-inset-bottom));
+    overflow: visible;
+  }
+  .envelope-stack { position: relative; width: min(86vw, 380px, 58dvh); }
+  .envelope-shadow {
+    position: absolute; left: 4%; right: 4%; bottom: -2.2rem; height: 2.4rem;
+    background: radial-gradient(closest-side, rgb(90 58 70 / .3), transparent);
+  }
+  .envelope-wrap { position: relative; perspective: 900px; aspect-ratio: 3 / 2; touch-action: none; }
+  .envelope__back, .envelope {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    border: 0; padding: 0; border-radius: 10px;
+    background-color: #c39eb2;
+    background-image: linear-gradient(rgb(195 158 178 / .88), rgb(195 158 178 / .88)), url('./assets/textures/envelope-linen.webp');
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / .55), 0 16px 30px -20px rgb(90 58 70 / .5);
+  }
+  .envelope__back { z-index: 1; }
+  .envelope { z-index: 3; overflow: hidden; cursor: pointer; }
+  .envelope__letter {
+    position: absolute; bottom: 5%; left: 50%; margin-left: -55%; width: 110%;
+    transform-origin: bottom center; will-change: transform;
+  }
+  .envelope__fold { position: absolute; inset: 0; pointer-events: none; }
+  .envelope__fold--left {
+    clip-path: polygon(0 0, 54% 50%, 0 100%);
+    background: linear-gradient(100deg, rgb(255 255 255 / .28), rgb(255 255 255 / 0) 70%);
+  }
+  .envelope__fold--right {
+    clip-path: polygon(100% 0, 46% 50%, 100% 100%);
+    background: linear-gradient(260deg, rgb(255 255 255 / .28), rgb(255 255 255 / 0) 70%);
+  }
+  .envelope__fold--bottom {
+    clip-path: polygon(0 100%, 50% 44%, 100% 100%);
+    background: linear-gradient(to top, rgb(90 58 70 / .2), rgb(90 58 70 / .02));
+    box-shadow: inset 0 -1px 0 rgb(90 58 70 / .2);
+  }
+  .envelope__flap {
+    position: absolute; top: 0; left: 0; width: 100%; height: 62%;
+    transform-origin: top center; transform-style: preserve-3d;
+    pointer-events: none; will-change: transform;
+  }
+  .envelope__flap-face, .envelope__flap-lining {
+    position: absolute; inset: 0; border-radius: 10px 10px 3px 3px;
+    clip-path: polygon(0 0,100% 0,96% 32%,74% 62%,50% 84%,26% 62%,4% 32%);
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  }
+  .envelope__flap-face {
+    background-color: var(--color-rose-300);
+    background-image: linear-gradient(rgb(244 179 198 / .9), rgb(244 179 198 / .9)), url('./assets/textures/envelope-linen.webp');
+    box-shadow: inset 0 -22px 26px -16px rgb(90 58 70 / .3);
+  }
+  .envelope__flap-lining {
+    transform: rotateX(180deg);
+    background: linear-gradient(var(--color-blush-200), var(--color-rose-300));
+    box-shadow: inset 0 14px 24px -12px rgb(90 58 70 / .35);
+  }
+  .envelope-hint {
+    font-size: .9rem; letter-spacing: .04em; text-align: center; color: var(--color-ink);
+    transition: opacity 400ms ease;
+  }
+  .envelope-close {
+    position: absolute; left: 50%; bottom: max(1rem, env(safe-area-inset-bottom)); transform: translateX(-50%);
+    padding: .5rem 1rem; min-height: 44px; font-size: .8rem; cursor: pointer;
+    text-decoration: underline; text-underline-offset: .25rem;
+  }
+  .sound-toggle {
+    position: fixed; bottom: calc(12px + env(safe-area-inset-bottom)); left: max(12px, env(safe-area-inset-left));
+    z-index: 30; display: grid; place-items: center; width: 44px; height: 44px;
+    border: 1px solid rgb(90 58 70 / .2); border-radius: 50%; background: var(--color-blush-100); cursor: pointer;
+  }
+
+  .greeting-card {
+    position: relative; box-sizing: border-box; width: 100%;
+    padding: clamp(1.5rem, 5dvh, 3.25rem) 1.5rem clamp(1.25rem, 4dvh, 2.5rem);
+    text-align: center; border-radius: 6px; color: var(--color-ink);
+    background-color: var(--color-cream);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / .8), 0 24px 44px -26px rgb(90 58 70 / .55);
+  }
+
+  /* Edge ageing. A radial that darkens the corners and leaves the middle alone —
+     the paper has been handled at the edges, which is where fingers go. */
+  .greeting-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(
+      118% 96% at 50% 42%,
+      rgb(90 58 70 / 0) 52%,
+      rgb(147 106 84 / 0.16) 88%,
+      rgb(120 82 62 / 0.26) 100%
+    );
+  }
+
+  .greeting-card__rule {
+    position: absolute;
+    top: clamp(0.7rem, 2.4dvh, 1.9rem);
+    left: 50%;
+    width: 3.25rem;
+    height: 1px;
+    transform: translateX(-50%);
+    background: linear-gradient(
+      90deg,
+      rgb(184 96 125 / 0) 0%,
+      rgb(184 96 125 / 0.55) 50%,
+      rgb(184 96 125 / 0) 100%
+    );
+  }
+
+  .greeting-card__hi {
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: clamp(0.95rem, 3.6vw, 1.15rem);
+    letter-spacing: 0.14em;
+    color: rgb(90 58 70 / 0.72);
+  }
+
+  /* "Happy" is script but not the loud note. The brief allows rose-600 on large
+     script only, and this is exactly that: it is the setup for the last word, so
+     it stays a size below it. */
+  .greeting-card__wish {
+    margin-top: 0.5rem;
+    font-family: var(--font-script);
+    font-weight: 400;
+    font-size: clamp(2rem, min(11vw, 9dvh), 3.6rem);
+    line-height: 1.05;
+    color: var(--color-rose-600);
+  }
+
+  .greeting-card__sparkles {
+    position: relative;
+    margin-top: 0.15rem;
+  }
+
+  .greeting-card__from {
+    margin-top: clamp(0.75rem, 3.3dvh, 1.75rem);
+    font-family: var(--font-letter);
+    font-size: clamp(0.95rem, 3.4vw, 1.1rem);
+    color: rgb(90 58 70 / 0.6);
+  }
+
+  /* ── The wash the card sits in ────────────────────────────────────────── */
+
+  /* One pink room behind every scene; the paper remains its own opaque surface. */
+  .watercolor {
+    position: fixed;
+    inset: 0;
+    overflow: clip;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .watercolor > * {
+    position: absolute;
+    inset: 0;
+  }
+
+  .watercolor__wash {
+    background:
+      radial-gradient(ellipse at 48% 28%, #f8cbdc 0%, #f0b8ce 46%, #e6a4c0 100%);
+  }
+
+  .watercolor__pool {
+    inset: -2%;
+    opacity: 0.32;
+    will-change: transform;
+  }
+
+  .watercolor__petals {
+    width: 100%;
+    height: 100%;
+  }
+
+  .watercolor__florals {
+    opacity: 0.74;
+  }
+
+  .watercolor__flower {
+    position: absolute;
+    width: clamp(100px, 15vw, 210px);
+    transform-origin: center bottom;
+    will-change: transform;
+  }
+
+  .watercolor__peony,
+  .watercolor__sprig {
+    display: block;
+    position: static;
+    width: 100%;
+    height: auto;
+  }
+
+  .watercolor__flower--1 {
+    top: -5rem;
+    left: -1.9rem;
+    width: clamp(125px, 18vw, 235px);
+  }
+
+  .watercolor__flower--1 .watercolor__peony {
+    transform: rotate(-24deg);
+  }
+
+  .watercolor__flower--2 {
+    top: -2rem;
+    right: -2.8rem;
+  }
+
+  .watercolor__flower--2 .watercolor__peony {
+    transform: rotate(26deg);
+  }
+
+  .watercolor__flower--3 {
+    bottom: -5.8rem;
+    left: -2.4rem;
+    width: clamp(150px, 20vw, 260px);
+  }
+
+  .watercolor__flower--3 .watercolor__peony {
+    transform: rotate(-28deg);
+  }
+
+  .watercolor__flower--4 {
+    bottom: -3.8rem;
+    right: -2rem;
+    width: clamp(120px, 17vw, 205px);
+  }
+
+  .watercolor__flower--4 .watercolor__peony {
+    transform: rotate(24deg);
+  }
+
+  .watercolor__flower--sprig-1 {
+    top: 39%;
+    left: -2.1rem;
+    width: clamp(86px, 11vw, 155px);
+    opacity: 0.8;
+  }
+
+  .watercolor__flower--sprig-2 {
+    top: 35%;
+    right: -1.2rem;
+    width: clamp(76px, 10vw, 135px);
+    opacity: 0.8;
+  }
+
+  .watercolor__vignette {
+    background: radial-gradient(ellipse at 50% 40%, transparent 36%, rgb(167 84 119 / 0.08) 100%);
+  }
+
+  .watercolor > .watercolor__drifting-petal {
+    position: absolute;
+    inset: auto;
+    width: 10px;
+    height: 15px;
+    border-radius: 75% 25% 65% 35%;
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .watercolor__pool,
+    .watercolor__flower {
+      will-change: auto;
+    }
+  }
+
+  .watercolor__grain {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.74' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23f)' opacity='.07'/%3E%3C/svg%3E");
+    background-size: 160px 160px;
+    mix-blend-mode: multiply;
+  }
+
+  .petals {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* Under reduced motion the particle layer is replaced by this: a handful of
+     painted petals, still and unlit, so the scene keeps its depth without a
+     per-frame simulation. */
+  .petals--static {
+    background-image:
+      radial-gradient(closest-side, rgb(244 179 198 / 0.5) 0 5px, rgb(244 179 198 / 0) 5px),
+      radial-gradient(closest-side, rgb(249 211 222 / 0.55) 0 4px, rgb(249 211 222 / 0) 4px);
+    background-size: 44px 44px, 62px 62px;
+    background-position: 12% 22%, 78% 62%;
+    background-repeat: repeat;
+    opacity: 0.7;
+  }
+
+  /*
+   * A sheet of paper, at low opacity so the fibre shows through the colour it is
+   * tinted by rather than sitting on top of it. Scene two puts one on the card
+   * and scene five puts one on the letter, which is the whole reason this is a
+   * shared class instead of a rule pasted into each scene.
+   *
+   * Real photograph — Paper005 from ambientCG, CC0, colour-mapped by
+   * `npm run textures` — for the same reason as the linen: a procedural fibre
+   * reads as noise, a photographed one reads as paper.
+   */
+  .paper {
+    background-image: url("./assets/textures/paper.webp");
+    background-size: 260px;
+  }
+
+  /* ── Scene three: the record poster ───────────────────────────────────── */
+
+  /* The full poster stays at the page top; only the compact player is fixed. */
+.vinyl-stage {
+  position: relative;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: clamp(1rem, 3dvh, 2rem);
+  min-height: 100dvh;
+  padding: clamp(1.5rem, 5dvh, 3rem) 1rem calc(1.5rem + env(safe-area-inset-bottom));
+}
+.vinyl-rig-layer {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: clamp(0.6rem, 2dvh, 1rem);
+  width: 100%;
+  pointer-events: auto;
+}
+.vinyl-rig {
+  position: relative;
+  width: min(92vw, 620px, calc((100dvh - 14rem) * 4 / 3));
+  aspect-ratio: 4 / 3;
+}
+.vinyl-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.76rem;
+}
+.vinyl-toggle {
+  position: static;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid rgb(184 96 125 / 0.28);
+  background: var(--color-cream);
+  color: var(--color-ink);
+  box-shadow: 0 4px 10px -6px rgb(90 58 70 / 0.4);
+  cursor: pointer;
+  transition: transform 200ms ease;
+}
+.vinyl-toggle:hover { transform: translateY(-2px); }
+.vinyl-toggle:active { transform: translateY(0); }
+.vinyl-toggle:disabled { opacity: 0.55; cursor: default; }
+.vinyl-mini {
+  position: fixed;
+  z-index: 20;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: min(238px, calc(100vw - 80px));
+  padding: 0.5rem 0.65rem;
+  border: 1px solid rgb(184 96 125 / 0.28);
+  border-radius: 999px;
+  background: rgb(255 250 247 / 0.96);
+  box-shadow: 0 8px 24px -12px rgb(90 58 70 / 0.35);
+  animation: vinyl-mini-in 350ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.vinyl-mini__disc {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+.vinyl-mini__copy {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+  flex: 1;
+  margin: 0;
+  font-size: 0.64rem;
+  line-height: 1.3;
+}
+.vinyl-mini__copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vinyl-mini__track {
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+.vinyl-mini .vinyl-toggle {
+  width: 44px;
+  height: 44px;
+  background: var(--color-blush-100);
+}
+
+@keyframes vinyl-mini-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+  .vinyl-caption {
+    margin: 0;
+    display: grid;
+    gap: 0.2rem;
+    text-align: center;
+    transition: opacity 420ms ease, transform 420ms ease;
+  }
+
+  .vinyl-caption__track {
+    font-family: var(--font-script);
+    font-size: clamp(1.6rem, 6.5vw, 2.4rem);
+    line-height: 1.1;
+    color: var(--color-ink);
+  }
+
+  .vinyl-caption__for {
+    font-family: var(--font-ui);
+    font-weight: 700;
+    font-size: 0.7rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--color-ink);
+  }
+
+  .scroll-cue {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    margin: 0;
+    font-family: var(--font-ui);
+    font-weight: 700;
+    font-size: 0.68rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--color-ink);
+  }
+
+  .scroll-cue svg {
+    animation: cue-bob 1.9s ease-in-out infinite;
+  }
+
+  @keyframes cue-bob {
+    0%,
+    100% {
+      transform: translateY(-3px);
+    }
+    50% {
+      transform: translateY(4px);
+    }
+  }
+
+  .vinyl-disc {
+    display: grid; place-items: center;
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    background:
+      linear-gradient(118deg, rgb(255 255 255 / 0.14) 0%, rgb(255 255 255 / 0.02) 38%, rgb(0 0 0 / 0.16) 100%),
+      repeating-radial-gradient(
+        circle at 50% 50%,
+        #2a1c25 0 5px,
+        #372734 5px 8px,
+        #231820 8px 11px
+      );
+    box-shadow:
+      0 24px 50px -22px rgb(90 58 70 / 0.6),
+      inset 0 0 0 1px rgb(255 255 255 / 0.06);
+    animation: vinyl-spin 5.24s linear infinite;
+  }
+
+  @keyframes vinyl-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .vinyl-disc[data-spinning="false"] {
+    animation-play-state: paused;
+  }
+
+  .vinyl-disc__label {
+    width: 28%;
+    height: 28%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 74%, var(--color-blush-50), var(--color-rose-400));
+    box-shadow: 0 0 0 2px rgb(184 96 125 / 0.55);
+  }
+
+  .vinyl-disc__label::after {
+    content: "";
+    display: block;
+    width: 8%;
+    height: 8%;
+    margin: 46% auto;
+    border-radius: 50%;
+    background: #2a1c25;
+  }
+
+  /* ── Scene four: the gallery ─────────────────────────────────────────── */
+
+  /*
+   * The gallery's own room. Not cream: the photographs are the brightest thing
+   * on the page, so the ground behind them is a shade down. The gradient is
+   * there so the six photos do not all sit on one flat field — a wall with a
+   * light in it is what stops a grid of polaroids reading as a UI list.
+   *
+   * `overflow: clip` because each polaroid leans up to 9° and its section is
+   * exactly 70vh; without clipping the corner of the topmost photo would paint
+   * into the heading above it.
+   */
+  .gallery {
+    position: relative;
+    overflow: clip;
+    padding-block: 6rem 4rem;
+  }
+
+  .gallery__head {
+    position: relative;
+    /* The head's box *is* the doily's box, so the tile row's `left`/`top`
+       resolve against the same rectangle the heart is drawn in. Left to its
+       own `max-width` the head is 34rem while the doily inside it stays
+       `min(74vw, 19rem)` — the offset between the two grows with the viewport,
+       and the row drifted clean off the heart on a phone and off to its left on
+       a desktop. Same box, same overlap, everywhere. */
+    width: min(74vw, 19rem);
+    margin-inline: auto;
+    margin-block-end: 4rem;
+  }
+
+  /* Tilted clockwise, ~12°. Transform on the wrapper rather than on the doily
+     itself so the greeting inside stays level to the doily — the whole point of
+     pinning it by one corner is that it was put there by hand. */
+  .gallery__doily {
+    transform: rotate(12deg);
+  }
+
+  /*
+   * The lace itself. `LaceHeart` draws three paths in one 200x180 SVG — a
+   * filled stock, two stroked scallop runs, and the hole — so what is painted
+   * here is the *paper* of the doily and the hole's rim. The stock carries the
+   * same photographed fibre as the envelope and the letter: a doily drawn in a
+   * flat token colour reads as a sticker, which is the opposite of the point.
+   */
+  .doily {
+    position: relative;
+    width: min(74vw, 19rem);
+    margin-inline: auto;
+    color: var(--color-ink);
+    filter: drop-shadow(0 10px 22px rgb(184 96 125 / 0.24));
+  }
+
+  /* No `background-image` here, deliberately, and it was a mistake when it had
+     one. A CSS background on an `<svg>` root paints the element's *border box* —
+     a rectangle — straight through the gaps in the paths, so the heart sat on a
+     tilted paper square. The fibre that matters is the letter's and the
+     polaroids'; the lace reads as lace from its two stroke runs and its shadow. */
+  .doily__lace {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .doily__stock {
+    fill: var(--color-blush-50);
+    fill-opacity: 0.96;
+  }
+
+  /* The scallops. `non-scaling-stroke` keeps the two runs the same weight
+     whatever the doily is scaled to — without it the inner run vanishes on a
+     360px screen and thickens on a desktop one. */
+  .doily__edge {
+    fill: none;
+    stroke: var(--color-blush-50);
+    stroke-opacity: 0.96;
+    vector-effect: non-scaling-stroke;
+  }
+
+  /* The hole. Filled with the page's own ground colour so the greeting reads as
+     written on the doily rather than floating above it, and stroked once at low
+     opacity for the rim where the lace is backed by another run. */
+  .doily__hole {
+    fill: var(--color-cream);
+    stroke: var(--color-rose-300);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .doily__inscription {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    gap: 0.1em;
+    margin: 0;
+    text-align: center;
+  }
+
+  .doily__line {
+    display: block;
+    font-family: var(--font-script);
+    font-weight: 400;
+    line-height: 1;
+    color: var(--color-rose-600);
+  }
+
+  .doily__line:first-child {
+    font-size: clamp(2.1rem, 9vw, 2.9rem);
+  }
+
+  .doily__line:last-child {
+    font-size: clamp(2.6rem, 11.5vw, 3.7rem);
+  }
+
+  /*
+   * The tile row, laid *over* the doily's lower-left rather than under it.
+   *
+   * Absolutely positioned on purpose. In flow it could only sit below the
+   * heart, and a row of tiles below a heart is a caption — the whole idea is
+   * that these letters were dropped on top of the doily after it was put down.
+   * `left` is measured against the head, which is wider than the doily, so it
+   * starts left of the heart's own edge and crosses into it.
+   */
+  .gallery__tiles {
+    position: absolute;
+    left: -6%;
+    top: 58%;
+    display: flex;
+    gap: 0.3rem;
+    text-align: left;
+  }
+
+  .tile {
+    display: grid;
+    place-items: center;
+    width: clamp(1.85rem, 8.2vw, 2.4rem);
+    aspect-ratio: 1 / 1;
+    border-radius: 0.4rem;
+    font-family: var(--font-ui);
+    font-weight: 700;
+    font-size: clamp(1rem, 4.4vw, 1.3rem);
+    line-height: 1;
+    /* Bead, not chip: a highlight top-left, a bounce bottom-right, and a dark
+       rim, so the row reads as a set of wooden scrabble tiles catching light. */
+    color: var(--color-cream);
+    background: linear-gradient(
+      150deg,
+      var(--color-rose-400) 0%,
+      var(--color-rose-600) 62%,
+      rgb(184 96 125 / 0.82) 100%
+    );
+    box-shadow:
+      inset 0 1px 0 rgb(255 250 247 / 0.55),
+      inset 0 -2px 3px rgb(90 58 70 / 0.35),
+      0 3px 6px rgb(90 58 70 / 0.22);
+  }
+
+  .gallery__album {
+    position: relative;
+    max-width: 68rem;
+    margin-inline: auto;
+  }
+
+  .gallery__progress {
+    position: absolute;
+    inset: 0 0 -2rem;
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .gallery__progress-track,
+  .gallery__progress-fill {
+    position: absolute;
+    top: 0;
+    left: 0.55rem;
+    width: 2px;
+    height: 100%;
+    border-radius: 2px;
+    background: rgb(184 96 125 / 0.22);
+  }
+
+  .gallery__progress-fill {
+    left: 0;
+    background: var(--color-rose-600);
+    transform-origin: top;
+    will-change: transform;
+  }
+
+  .gallery__progress-stop {
+    position: absolute;
+    left: 0;
+    display: block;
+    width: 44px;
+    height: 44px;
+    transform: translateY(-50%);
+    pointer-events: auto;
+    text-decoration: none;
+  }
+
+  .gallery__progress-dot {
+    position: absolute;
+    top: 50%;
+    left: 0.55rem;
+    width: 9px;
+    height: 9px;
+    translate: -50% -50%;
+    border-radius: 50%;
+    border: 1px solid var(--color-rose-600);
+    background: var(--color-cream);
+    transition: transform 180ms ease-out;
+  }
+
+  .gallery__progress-stop[aria-current="step"] .gallery__progress-dot {
+    background: var(--color-rose-600);
+  }
+
+  .gallery__progress-label {
+    position: absolute;
+    top: calc(50% + 0.7rem);
+    left: 0.55rem;
+    font-family: var(--font-letter);
+    font-size: 0.78rem;
+    line-height: 1.35;
+    white-space: nowrap;
+    color: var(--color-ink);
+    opacity: 0;
+    transition: opacity 180ms ease-out;
+    pointer-events: none;
+  }
+
+  .gallery__progress-stop:hover .gallery__progress-label,
+  .gallery__progress-stop:focus-visible .gallery__progress-label,
+  .gallery__progress-stop--letter .gallery__progress-label {
+    opacity: 1;
+  }
+
+  @media (min-width: 48rem) {
+    .gallery__progress-track { left: 50%; }
+    .gallery__progress-stop { left: 50%; transform: translate(-50%, -50%); }
+    .gallery__progress-dot { left: 50%; }
+    .gallery__progress-label { left: 50%; translate: -50% 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gallery__progress-dot,
+    .gallery__progress-label { transition: none; }
+  }
+
+  .gallery__photos {
+    max-width: 68rem;
+    margin-inline: auto;
+    padding-inline: 1rem;
+    list-style: none;
+  }
+
+  .gallery__photo-item {
+    /* 70vh a piece, so each photograph is roughly a screen of its own and the
+       scroll between two of them is a beat, not a jump. */
+    display: flex;
+    min-height: 70dvh;
+    align-items: center;
+  }
+
+  /*
+   * The slot owns the left/right zig-zag and the height; the lift inside it owns
+   * the scroll parallax and the lean, which have to be Motion's transform
+   * (`y` / `rotate` on `.polaroid-lift`) rather than anything here.
+   */
+  .polaroid-slot {
+    width: min(78vw, 21rem);
+    /* The mobile stagger: 6-12% of the column, off the start edge. A margin
+       rather than a padding, because padding would shrink the card — six photos
+       six different widths reads as six broken layouts, not as a hand-placed
+       stack. A percentage margin resolves against the column, so this is
+       independent of how wide the card itself is. */
+    margin-inline-start: calc(var(--stagger, 0) * 100%);
+  }
+
+  @media (min-width: 48rem) {
+    /* Past the phone breakpoint the alternate sides take over and the stagger
+       stops being asked for anything — `--stagger` would otherwise stack on top
+       of the nudge below and push a photo out of its column. */
+    .polaroid-slot {
+      margin-inline-start: 0;
+    }
+
+    /* Half the column, plus a nudge off the centre line, which is what makes it
+       an album rather than a list. `translate` rather than a margin, so the two
+       sides stay centred on the same axis and only lean away from it. */
+    .polaroid-slot--left {
+      margin-inline-end: auto;
+      translate: -6% 0;
+    }
+
+    .polaroid-slot--right {
+      margin-inline-start: auto;
+      translate: 6% 0;
+    }
+  }
+
+  .polaroid-lift {
+    will-change: transform;
+  }
+
+  /*
+   * The card. Paper, not white — `.paper` is the same photographed fibre the
+   * envelope and the letter use, and a pure white rectangle reads as a
+   * placeholder even when the photograph inside it is real.
+   *
+   * The thick bottom border is the polaroid's signature and the caption's home;
+   * the two shadows are a contact shadow directly under the card and a softer one
+   * below that, because one shadow makes the card look pasted on rather than
+   * resting on the page.
+   */
+  .polaroid {
+    position: relative;
+    margin: 0;
+    padding: 0.7rem 0.7rem 0;
+    border-radius: 2px;
+    background-color: var(--color-cream);
+    background-image: url("./assets/textures/paper.webp");
+    background-size: 240px;
+    box-shadow:
+      0 1px 1px rgb(90 58 70 / 0.14),
+      0 10px 20px rgb(90 58 70 / 0.2),
+      0 24px 44px rgb(90 58 70 / 0.12);
+  }
+
+  /* The window glare, kept very faint. It is the difference between a printed
+     card and one that is lying on a table in front of you. */
+  .polaroid__sheen {
+    position: absolute;
+    inset: 0;
+    border-radius: 2px;
+    pointer-events: none;
+    background: linear-gradient(
+      118deg,
+      rgb(255 255 255 / 0.34) 0%,
+      rgb(255 255 255 / 0.06) 34%,
+      rgb(255 255 255 / 0) 58%,
+      rgb(184 96 125 / 0.08) 100%
+    );
+  }
+
+  .polaroid__tape {
+    position: absolute;
+    top: -0.85rem;
+    left: 50%;
+    width: 42%;
+    translate: -50% 0;
+    pointer-events: none;
+    filter: drop-shadow(0 2px 3px rgb(90 58 70 / 0.22));
+  }
+
+  .polaroid__photo {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 1 / 1;
+    background-color: var(--color-blush-100);
+  }
+
+  .polaroid__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* The band the caption sits in. Wider than the caption needs, because the
+     emptiness on either side is the print's margin. */
+  .polaroid__caption {
+    display: grid; place-items: center; min-height: 3.1rem; padding: .35rem .2rem .55rem;
+    font-family: var(--font-letter); font-weight: 400; font-size: clamp(.95rem,3.5vw,1.08rem);
+    line-height: 1.45; letter-spacing: 0; text-align: center; text-transform: none; color: var(--color-ink);
+  }
+
+  /* ── Scene five: the letter ─────────────────────────────────────────────── */
+
+  /*
+   * 250vh of travel for a 100dvh sticky stage, plus the letter's own overflow.
+   * The numbers come from `letterTimeline.ts` and mean the same thing here as
+   * they do there: the fold is finished at 35% and every word is lit at 90%, so
+   * the reader spends a third of the scroll opening the paper and the rest
+   * reading it.
+   *
+   * The `--letter-overflow` term is measured by `TrifoldLetter.tsx` and is what
+   * keeps that reading rate constant: the ink travels its own overflow inside
+   * the reveal window, so the section has to grow by the same amount or a long
+   * letter sweeps past at four times the speed of a short one. It defaults to
+   * zero, so a letter that fits the sheet is unaffected by it.
+   *
+   * `isolation: isolate` so the `::before` texture multiplies against this
+   * section's own background rather than reaching through to whatever the
+   * gallery painted underneath it.
+   */
+  .letter {
+    position: relative;
+    isolation: isolate;
+    height: calc(250dvh + var(--letter-overflow, 0px));
+  }
+
+  /* The desk the letter is lying on. Same photographed fibre as the card and the
+     sheet, at an opacity low enough to read as a surface rather than as a
+     pattern. */
+  .letter::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("./assets/textures/paper.webp");
+    background-size: 300px;
+    opacity: 0.45;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+  }
+
+  /*
+   * `overflow: clip`, never `hidden`. The reason is what `clip` is *for*: it
+   * clips without becoming a scroll container, so nothing inside can be
+   * scrolled or focus-scrolled out of sync with the sticky art, and
+   * `position: sticky` on this element keeps working. `hidden` would make the
+   * stage a scroll container and hand the user a second scroll axis inside a
+   * scene whose entire timeline is driven by one scroll.
+   */
+  .letter__stage {
+    position: sticky;
+    top: 0;
+    display: grid;
+    place-items: center;
+    height: 100dvh;
+    overflow: clip;
+  }
+
+  /*
+   * Perspective for the fold — it is what turns two flat panels into paper
+   * opening; without it the flaps only ever get narrower.
+   *
+   * 52rem × 94dvh, not the 44rem a greeting card would want, and the number is
+   * not taste. 44rem measured 442px of ink overflow at 1280×800: the brief's
+   * `clamp(18px, 4.6vw, 26px)` reaches its 26px ceiling on any desktop, so at
+   * 26px a 704px sheet is 44.2px of leading per line over 736px of height and
+   * simply cannot hold a paragraph.
+   *
+   * Why grow the sheet instead of shrink the type: capacity goes as
+   * `1 / font-size²` (both the characters per line and the lines per page scale
+   * with it), so dropping 26px → 20px would buy 1.7× the room — but it edits the
+   * typography the brief pins, and the padding stays fixed while the type moves,
+   * so it is the less honest lever of the two. 52rem ≈ 832px is A4, which is the
+   * other reason: this is supposed to be a letter, not a card.
+   *
+   * The sheet stays one screen whatever the letter weighs, and the surplus is
+   * carried by `.worn__ink`'s travel rather than by a taller sheet: `npm run
+   * verify` holds the sheet inside the viewport *and* holds the ink to having
+   * travelled its whole overflow at the page end, so the two failure modes —
+   * the sheet growing off screen, and the tail of the letter being written
+   * somewhere the reader can never scroll to — are separately caught.
+   */
+  .letter__paper {
+    position: relative;
+    perspective: 1400px;
+    width: min(94vw, 60rem);
+    height: min(calc(100dvh - 2rem), 960px);
+  }
+
+  /* Zero-sized but present. `position: absolute` with no box guarantees it never
+     contributes to the sheet's size, and `overflow: hidden` keeps a stray
+     overflow from the zero-size box from painting. */
+  .worn__defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+
+  /*
+   * The −1° lives here and not on `.letter__paper` because the fold flaps are
+   * children of this box. Rotated on the wrapper instead, they would shear
+   * against the sheet by a few pixels at every corner.
+   *
+   * No `isolation: isolate` on this element, deliberately: it is a grouping
+   * property and it would flatten the `preserve-3d` below, which is what lets the
+   * flaps sit in the sheet's own 3D space and turn against it as it opens. The
+   * `transform` already makes this a stacking context, which is all the ink's
+   * `mix-blend-mode` needs to have something to multiply against.
+   */
+  .worn__sheet {
+    position: absolute;
+    inset: 0;
+    transform: rotate(-1deg);
+    transform-style: preserve-3d;
+  }
+
+  /*
+   * The paper and its deckled edge on one element, displaced and then shadowed.
+   * Filter functions run right to left, so listing the shadow second is what
+   * makes the shadow follow the deckled silhouette instead of describing a
+   * rectangle the sheet no longer has.
+   */
+  .worn__base {
+    position: absolute;
+    inset: 0;
+    background-color: var(--color-cream);
+    background-image: url("./assets/textures/paper.webp");
+    background-size: 260px;
+    filter: url("#letter-deckle") drop-shadow(0 18px 28px rgb(90 58 70 / 0.22));
+  }
+
+  /* Handled paper darkens where thumbs and sleeves have been. */
+  .worn__aging {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      118% 88% at 50% 44%,
+      rgb(255 255 255 / 0) 50%,
+      rgb(120 84 96 / 0.13) 86%,
+      rgb(94 64 76 / 0.26) 100%
+    );
+    mix-blend-mode: multiply;
+    pointer-events: none;
+  }
+
+  .worn__crease {
+    position: absolute;
+    pointer-events: none;
+    mix-blend-mode: multiply;
+    background: linear-gradient(
+      to bottom,
+      rgb(59 47 42 / 0) 0%,
+      rgb(59 47 42 / 0.15) 45%,
+      rgb(59 47 42 / 0.04) 56%,
+      rgb(59 47 42 / 0) 100%
+    );
+  }
+
+  /* The two trifold hinges, at the thirds. Inset 5% from the edges because the
+     deckle wobbles the silhouette and a crease line running off the end of a
+     wavy edge is the tell that the paper is a div. The 5% is margin for the
+     displacement, not a description of it: `feDisplacementMap`'s `scale` is a
+     scalar in the turbulence's own space, not a pixel count, and it does not
+     displace proportionally — measured at `scale="9"` the edge moved 2–3px on
+     both sides. */
+  .worn__crease--a {
+    inset-block-start: calc(33.3333% - 4px);
+    inset-inline: 5%;
+    height: 8px;
+  }
+
+  .worn__crease--b {
+    inset-block-start: calc(66.6667% - 4px);
+    inset-inline: 5%;
+    height: 8px;
+  }
+
+  /* The faint vertical one from being carried in a pocket. Gradient runs the
+     other way, hence its own background rather than a rotation. */
+  .worn__crease--v {
+    inset-block: 5%;
+    inset-inline-start: calc(50% - 3px);
+    width: 6px;
+    opacity: 0.5;
+    background: linear-gradient(
+      to right,
+      rgb(59 47 42 / 0) 0%,
+      rgb(59 47 42 / 0.07) 45%,
+      rgb(59 47 42 / 0.02) 56%,
+      rgb(59 47 42 / 0) 100%
+    );
+  }
+
+  /*
+   * Foxing: three authored blooms and two co-tiled speckle fields. One
+   * `radial-gradient` at `background-size: 0 0` is how a spot is placed without
+   * a pseudo-element — a repeat is off, so it paints once at its position.
+   */
+  .worn__foxing {
+    position: absolute;
+    inset: 0;
+    opacity: 0.5;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+    background-image:
+      radial-gradient(closest-side, rgb(150 104 74 / 0.16) 0%, rgb(150 104 74 / 0) 100%),
+      radial-gradient(closest-side, rgb(168 122 88 / 0.13) 0%, rgb(168 122 88 / 0) 100%),
+      radial-gradient(closest-side, rgb(150 104 74 / 0.14) 0%, rgb(150 104 74 / 0) 100%),
+      radial-gradient(circle at 22% 34%, rgb(150 104 74 / 0.5) 0 1px, rgb(150 104 74 / 0) 2px),
+      radial-gradient(circle at 71% 63%, rgb(150 104 74 / 0.45) 0 1px, rgb(150 104 74 / 0) 2px);
+    background-size: 34px 30px, 47px 41px, 0 0, 53px 47px, 61px 55px;
+    background-position: 12% 18%, 68% 74%, 0 0, 0 0, 0 0;
+    background-repeat: no-repeat, no-repeat, no-repeat, repeat, repeat;
+  }
+
+  /*
+   * The writing. `multiply` plus a hair of shadow is what makes ink sit *in* the
+   * fibre rather than on top of it.
+   *
+   * This box is a *viewport*, not a container: the letter is longer than the
+   * sheet, `.worn__ink` clips it, and `.worn__flow` is translated through it as
+   * the reader scrolls (see `TrifoldLetter.tsx` for the mapping).
+   *
+   * `overflow: clip`, never `hidden` — for the same reason `.letter__stage`
+   * uses it. `hidden` makes this a scroll container, so a wheel over the sheet
+   * would scroll the letter while the reveal kept waiting on the page, and the
+   * two would drift apart. `clip` clips without offering a scroll position:
+   * there is exactly one scroll axis in this scene and it belongs to the page.
+   *
+   * Block layout, not flex: a flex column would shrink its children to fit a
+   * fixed-height box instead of overflowing it, and then the text would quietly
+   * stop where the box stops. Overflow is now *expected* — `npm run verify`
+   * asserts the ink has travelled its whole overflow by the page end, which is
+   * the same defect caught the other way round: a tail the reader can never
+   * scroll to reads exactly like a tail that was never written.
+   *
+   * The bottom padding is the peony's band, not the text's, and the two are tied
+   * to the same measurements: the peony's on-sheet extent is 88px at 390×844
+   * (48px wide × its 1.615 aspect, 10px of it hanging below the paper), so the
+   * band floors at 3.25rem there. At 1280×800 the peony overhangs far enough to
+   * clear the text column entirely and the band is the 72px cap. Shrink the peony
+   * and this should shrink with it — `npm run verify` asserts no word rect
+   * intersects the peony rect, so the band cannot be quietly outgrown. The band
+   * is also what the travel stops against: the flow's travel is measured against
+   * the *content* box, so the last line comes to rest on the band's top edge
+   * rather than inside the peony.
+   */
+  .worn__ink {
+    position: absolute;
+    inset: 0;
+    overflow: clip;
+    padding: clamp(0.8rem, 3dvh, 1.6rem) clamp(0.9rem, 5.5%, 2.6rem)
+      clamp(3.25rem, 11dvh, 4.5rem);
+    font-family: var(--font-letter);
+    font-size: clamp(18px, 4.6vw, 26px);
+    line-height: 1.7;
+    color: var(--color-letter-ink);
+    mix-blend-mode: multiply;
+    text-shadow: 0 0 1px rgb(59 47 42 / 0.45);
+    pointer-events: none;
+  }
+
+  /* The letter itself — the only child of the viewport, and the thing `y`
+     translates. It has no size of its own beyond its content: it is the ink
+     box's content box, laid out at full length and then moved. */
+  .worn__flow {
+    position: relative;
+  }
+
+  /*
+   * The two outer panels of the trifold. The hinge is each panel's own inner
+   * edge (`transform-origin` below), so the top panel's body sits above its hinge
+   * and the bottom panel's below it — which is why they are driven with opposite
+   * signs and end up travelling the same way round the x axis.
+   *
+   * Both swing towards the reader rather than behind the sheet, and
+   * `backface-visibility: hidden` culls them past 90° (the face normal's z
+   * component is cos a), so they end edge-on and vanish. `TrifoldLetter.tsx`
+   * therefore drives them to ±90 and no further; the endpoint is where the panel
+   * stops painting, and mapping to ±180 would only extend it over scroll that
+   * shows nothing.
+   */
+  .letter__flap {
+    position: absolute;
+    inset-inline: 0;
+    height: 33.3333%;
+    background-image:
+      linear-gradient(to bottom, rgb(255 255 255 / 0.5), rgb(249 211 222 / 0.42)),
+      url("./assets/textures/paper.webp");
+    background-size: auto, 260px;
+    backface-visibility: hidden;
+    pointer-events: none;
+  }
+
+  .letter__flap--top {
+    top: 0;
+    transform-origin: bottom center;
+  }
+
+  .letter__flap--bottom {
+    top: 66.6667%;
+    transform-origin: top center;
+  }
+
+  /* Authored lines are paragraphs, not verses: the gap between them is the
+     leading and nothing else. This is a real <p> so a screen reader announces
+     the paragraph break, which means the UA's `margin: 1em 0` has to go — it
+     would spend height the fixed-height sheet may not have, on every one of the
+     twelve lines. */
+  .letter__line {
+    display: block;
+    margin: 0;
+  }
+
+  /* The peony. Anchored to the *paper's* right edge with the same width
+     expression `.letter__paper` uses rather than to the stage's own edge — on a
+     wide screen those are very different, and an ornament in the corner of the
+     viewport instead of on the sheet reads as a different picture entirely.
+
+     The overhang is what makes this affordable. At 1280×800 the sheet is 52rem
+     (832px) in a 1280px stage, so 224px of page sits beside it and the peony
+     hangs 57.6px off the paper — well clear of the ink's 41.6px side padding,
+     which is why the desktop needs no ink reserve band at all. On a phone the
+     sheet is 94vw and there are 11.7px of margin to hang into, so the peony does
+     sit over the text and the ink's bottom padding is doing the work instead.
+     `max()` keeps the mobile overhang from pushing it off the viewport, and
+     `min(47vw, 30rem)` must stay half of `.letter__paper`'s width or the peony
+     detaches from the sheet. */
+  .peony {
+    position: absolute;
+    right: max(0.25rem, calc(50% - min(47vw, 26rem) - clamp(0.75rem, 4.5vw, 4rem)));
+    bottom: clamp(0.25rem, 1.2dvh, 1rem);
+    width: clamp(48px, 7vw, 78px);
+    height: auto;
+    filter: drop-shadow(0 6px 10px rgb(90 58 70 / 0.18));
+    pointer-events: none;
+  }
+}
+
+/*
+ * Unlayered, and only here.
+ *
+ * `SparklesText` bakes `text-6xl font-bold` onto its own root element. Tailwind's
+ * `utilities` layer beats `@layer components` at equal specificity no matter
+ * which file the rule is in, so a component class cannot restyle it. An unlayered
+ * rule outranks every layer, which is the one legal way to win without
+ * `!important` — and it is worth exactly one rule, because "Birthday!" is the
+ * loudest thing in the build and it is not the component library's idea of what a
+ * heading looks like.
+ */
+.greeting-card__birthday {
+  font-family: var(--font-script);
+  font-weight: 400;
+  font-size: clamp(2rem, min(16vw, 13dvh), 5.25rem);
+  line-height: 1.1;
+  color: var(--color-rose-600);
+  text-transform: none;
+}
+
+/*
+ * Reduced motion. Transitions collapse to 200ms and nothing loops: the floating
+ * envelope and the pulsing hint both stop. The letter is a different mechanism
+ * entirely — it is a `useTransform` on scroll progress, which this block cannot
+ * reach, so `TrifoldLetter` pins it instead. Anything still moving in either
+ * place is a bug.
+ *
+ * The shortened section is the same idea applied to distance rather than to
+ * motion. With `open` and every word opacity pinned to 1, the 250vh of travel
+ * the letter normally spends unfolding and revealing is 150vh in which nothing
+ * on screen changes at all — the reader scrolls a full screen and a half past a
+ * letter they already finished. 130vh leaves enough to engage the sticky stage
+ * and scroll it away.
+ *
+ * Measured under emulated `reduce` at 390×844, since headless Chrome does not
+ * force the preference and `npm run verify` never sees this path: the section
+ * measures 1097px against 250vh's 2110px, all 110 words read 1.00 at the top of
+ * it, both flaps sit at m32 ±1 — pinned edge-on, culled by
+ * `backface-visibility` — and the sheet's travel still carries the whole letter.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.2s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.2s !important;
+    scroll-behavior: auto !important;
+  }
+
+  .hint {
+    animation: none;
+    opacity: 0.6;
+  }
+
+  /* Not `animation-play-state: paused` — that would hold a disc at 37 degrees,
+     which is a still of a spinning object. The record in scene three does not
+     turn under reduced motion either, so the fallback disc should agree. */
+  .vinyl-disc,
+  .scroll-cue svg {
+    animation: none;
+  }
+
+  .letter {
+    /* Same measured growth as the motion path: `TrifoldLetter` still translates
+       the flow by `-overflow` over this distance, so the sheet's last pixel still
+       receives the letter's last word. */
+    height: calc(130dvh + var(--letter-overflow, 0px));
+  }
+}
