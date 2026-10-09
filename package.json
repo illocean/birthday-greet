@@ -1,5 +1,6 @@
 {
-  "name": "a-little-something",
+  "name": "birthday-greet",
+  "description": "A scroll-driven interactive birthday site in five scenes — envelope, card, record, photo wall, letter. Ships with placeholders: swap in your own text, photos and music.",
   "private": true,
   "version": "1.0.0",
   "type": "module",

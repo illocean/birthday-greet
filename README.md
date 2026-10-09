@@ -1,4 +1,6 @@
-# A Little Something
+# birthday-greet
+
+![The photo-wall scene](docs/preview.png)
 
 A scroll-driven interactive birthday site in five scenes — envelope, card, record, photo wall,
 letter. A static bundle: no backend, no runtime network calls. React 19 · Vite · TypeScript ·
